@@ -1,4 +1,10 @@
-.ipynb_checkpoints
 .vscode
 PYmodule/__pycache__
 .DS_Store
+*.ipynb* 
+# .ipynb_checkpoints
+*txt 
+*dat
+fort.*
+try?.py
+*.o

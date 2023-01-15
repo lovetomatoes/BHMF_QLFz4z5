@@ -1,7 +1,7 @@
       PROGRAM integ
 !      SUBROUTINE integ(tau, delta, MM, a, l_c, chisq)
 
-!   gfortran BHMF_evol_cons.f -o ana; ./ana
+!   gfortran BHMF_evol_cons.f -o BHMF_evol_cons.o; ./BHMF_evol_cons.o
 
       implicit none
       integer, parameter :: N=1000, N_d=18

@@ -92,8 +92,7 @@ t_Edd = 1./(4*pi*G/.4/c)
 fbol_1450 = 4.4
 
 log10Ms = [11,12,13]
-# n_base = [1.63,1.09e-01,4.02e-03,3.87e-05,1.07e-08]
-n_base = [4.02e-03,3.87e-05,1.07e-08]
+# number density of base halos at z=6, in Mpc^-3
 n_base = [9.87e-4, 6.15e-6, 8.92e-10] # from dNdlnM.ipynb & Jdist.cpp
 Mhpres = [datapre+'1e11',datapre+'1e12',datapre+'1e13']
 
@@ -118,23 +117,31 @@ rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))
 # -----------------  binned data in Gpc^-3 mag^-1     ---------------------
 # -----------------  '6': z=6 Matsuoka 2018; Table 4     ---------------------
 # -----------------  '5': z=5 Niida 2020; Table 3 excluding m_i<23.1    ---------------------
-# -----------------  '4': z=4 Akiyama 2018;     ---------------------    
+# -----------------  '4': z=4 Akiyama 2018;  Table 4   ---------------------    
 bin_cen = {'6':np.array([-29,-27.5,-26.75,-26.25,-25.75,-25.25,-24.75,-24.25,-23.75,-23.25,-22.75,-22]),
            '5':np.append(np.arange(-28.63,-26.,.25),np.arange(-27.07,-23.5,.5)),
+           '5_1':np.arange(-28.63,-26.,.25),
+           '5_2':np.arange(-27.07,-23.5,.5),
            '4':np.arange(-28.875, -21.625, .25)
            }
 bin_wid = {'6':np.array([2, 1, .5, .5, .5, .5, .5, .5, .5, .5, .5, 1]),
            '5':np.append(0.25*np.ones(len(np.arange(-28.63,-26.,.25))),
                          0.5*np.ones(len(np.arange(-27.07,-23.5,.5)))),
+           '5_1':0.25,
+           '5_2':0.5, 
            '4':.25*np.ones(len(bin_cen['4']))
            }
 bin_edg = {'6':np.append(bin_cen['6'] - bin_wid['6']/2., bin_cen['6'][-1]+bin_wid['6'][-1]/2.),
            '5':np.append(bin_cen['5'] - bin_wid['5']/2., bin_cen['5'][-1]+bin_wid['5'][-1]/2.),
+           '5_1':np.append(bin_cen['5_1'] - bin_wid['5_1']/2., bin_cen['5_1'][-1]+bin_wid['5_1']/2.),
+           '5_2':np.append(bin_cen['5_2'] - bin_wid['5_2']/2., bin_cen['5_2'][-1]+bin_wid['5_2']/2.),
            '4':np.append(bin_cen['4'] - bin_wid['4']/2., bin_cen['4'][-1]+bin_wid['4'][-1]/2.)
            }
 Phi_obs = {'6':np.array([.0079, .242, .58, .9, 1.33, 4.6, 7.,  6.6, 8.3, 10.9, 23., 16.2]),
            '5':10.*np.array([.018,.018,.0092,.055,.083,.212,.277,.499,.628,.772,.639,
                              1.2,.6,1.8,2.98,7.78,5.39,10.7,12.5]),
+           '5_1': 10.*np.array([.018,.018,.0092,.055,.083,.212,.277,.499,.628,.772,.639]),
+           '5_2': 10.*np.array([1.2,.6,1.8,2.98,7.78,5.39,10.7,12.5]),
            '4':10**np.array([-9.710,-9.534,-9.710,-9.057,-8.781,-8.534,-8.192,-7.966,-7.853,-7.642,
                              -7.552,-7.387,-7.077,-7.189,-6.899,-6.756,-6.745,-6.577,-6.487,-6.493,
                              -6.405,-6.341,-6.369,-6.297,-6.382,-6.298,-6.219,-6.088,-6.253]) * 1e9
@@ -142,37 +149,14 @@ Phi_obs = {'6':np.array([.0079, .242, .58, .9, 1.33, 4.6, 7.,  6.6, 8.3, 10.9, 2
 Phi_err = {'6':np.array([.0079, .061, .17, .32, .6, 1.2, 1.7, 2., 2.6, 3.6, 8.1, 16.2]),
            '5':10.*np.array([.013,.013,.0092,.023,.028,.044,.051,.068,.076,.087,.171,
                              1.58,1.39,1.75,2.01,2.81,2.46,3.2,3.4]),
+           '5_1':10.*np.array([.013,.013,.0092,.023,.028,.044,.051,.068,.076,.087,.171]),
+           '5_2':10.*np.array([1.58,1.39,1.75,2.01,2.81,2.46,3.2,3.4]),
            '4':np.array([0.138,0.169,0.138,0.292,0.402,0.534,0.791,1.026,1.169,1.490,1.657,2.545,
                          29.581,17.287,23.032,27.088,27.422,33.384,37.385,37.343,42.783,47.960,47.366,
                          51.538,46.855,52.208,59.367,71.892,80.733])
            }     
 
 
-# !!!!!!!!!!!! eta_max should be used when 1/eta \simeq (1-eta)/eta breaks
-eta_max = .5; eta_min = 0.057 # 0.057
-
-# def M1M0(M0,dt,f_duty,mu_fit,eta8,delta):
-#     M1 = 1e8*pow(mu_fit*f_duty*delta*dt/(eta8*t_Edd)+pow(M0/1e8,delta),1./delta)
-
-#     ## eta mimicking Ueda14 empirical formula: eta = eta8*(M/M8)**delta
-#     eta = eta8*pow(M0/1e8,delta)
-#     ## M1: mass after growth following t^(1/delta) power
-#     M1 = 1e8*pow(mu_fit*f_duty*delta*dt/(eta8*t_Edd)+pow(M0/1e8,delta),1./delta)
-
-#     ## if eta > maximum -> use Eddington accretion -- M(t) \propto M0*exp(...)
-#     eta = ma.masked_greater(eta, eta_max)
-#     M1[eta.mask] = M0[eta.mask]*np.exp(mu_fit*f_duty*dt/(eta_max*t_Edd))
-#     # i = ma.argmax(eta)
-#     # M1[eta.mask] = M0[eta.mask]/M0[i]*M1[i]
-#     eta[eta.mask] = eta_max
-
-#     ## if eta < minimum -> use Eddington accretion -- M(t) \propto M0*exp(...)
-#     eta = ma.masked_less(eta, eta_min)
-#     i = ma.argmin(eta)
-#     M1[eta.mask] = M0[eta.mask]/M0[i]*M1[i]
-#     # the following exponential formula not continuous
-#     # !!!!!!!! M1[eta.mask] = M0[eta.mask]*np.exp(mu_fit*f_duty*dt/(eta_min*t_Edd))    
-#     return M1
 
 def linear(xs,ys,x):
     i = np.argmax(xs>x)
@@ -211,63 +195,6 @@ def M1M0_d(M0, l, dt, delta, M_cut = M_cut):
     return M1
 
 # ---------------- kernel*: kernel of calculating P(lbd) integral ----------------
-def kernelS_MBHmesh(M1, M0, dt, l_cut):
-    # eta = 0.1; (1-eta)/eta
-    xx,yy = np.meshgrid(M0, M1)
-    lbd = np.log(yy/xx) / ( 9.*dt/t_Edd )
-    return lbd/l_cut
-
-
-# exponential growth
-def kernel_MBH1(Mgrow_ratio, dt, f_duty, mu, sigma_dex):
-    lbd = np.log(Mgrow_ratio)/( f_duty*dt/(0.1*t_Edd) )
-    return np.log(lbd/mu) / (sigma_dex*np.log(10.)*math.sqrt(2.))
-
-# power law growth + exp extrapolation
-def kernel_MBH2(M1, M0, dt, f_duty, mu, sigma_dex, eta8, delta):
-    lbd = ( pow(M1/1e8, delta) - pow(M0/1e8, delta) )/(f_duty*delta*dt)*(eta8*t_Edd)
-    eta = eta8*pow(M0/1e8,delta)
-    # if eta > maximum -> use Eddington accretion -- M(t) \propto M0*exp(...)
-    eta = ma.masked_greater(eta, eta_max)
-    # M1[eta.mask] = M0[eta.mask]*np.exp(mu*f_duty*dt/(eta_max*t_Edd))
-    i = ma.argmax(eta)
-    lbd[eta.mask] = lbd[i] * np.log(M1/M0[eta.mask]) / np.log(M1/M0[i])
-    # lbd[eta.mask] = np.log(M1/M0[eta.mask])/ (f_duty*dt/(eta_max*t_Edd))
-    eta[eta.mask] = eta_max
-
-    # if eta < minimum -> use Eddington accretion -- M(t) \propto M0
-    eta = ma.masked_less(eta, eta_min)
-    i = ma.argmin(eta)
-    # lbd[i] \propto log(M1/M0[i]) from Eddington accretion
-    lbd[eta.mask] = lbd[i] * np.log(M1/M0[eta.mask]) / np.log(M1/M0[i])
-    return np.log(lbd/mu) / (sigma_dex*np.log(10.)*math.sqrt(2.))
-
-# piece-wise lbd; 2 exp + 1 pow
-def kernel_MBH3(M1, M0, dt, f_duty, mu, sigma_dex, eta8, delta):
-    lbd = ( pow(M1/1e8, delta) - pow(M0/1e8, delta) )/(f_duty*delta*dt)*(eta8*t_Edd)
-    eta = eta8*pow(M0/1e8,delta)
-    # if eta > maximum -> use Eddington accretion -- M(t) \propto M0*exp(...)
-    eta = ma.masked_greater(eta, eta_max)
-    # M1[eta.mask] = M0[eta.mask]*np.exp(mu*f_duty*dt/(eta_max*t_Edd))
-    lbd[eta.mask] = np.log(M1/M0[eta.mask])/ (f_duty*dt/(eta_max*t_Edd))
-    eta[eta.mask] = eta_max
-    # if eta < minimum -> use Eddington accretion -- M(t) \propto M0
-    eta = ma.masked_less(eta, eta_min)
-    lbd[eta.mask] = np.log(M1/M0[eta.mask])/ (f_duty*dt/(eta_min*t_Edd))
-    return np.log(lbd/mu) / (sigma_dex*np.log(10.)*math.sqrt(2.))
-
-# lambda from Schechter function 
-def kernelS_MBH(Mgrow_ratio, dt, f_duty, l_cut):
-    lbd = np.log(Mgrow_ratio)/( f_duty*dt/(0.1*t_Edd) )
-    return lbd/l_cut
-
-# def kernelS_MBH_M(M1, M0, dt, f_duty, l_cut, d_fit, logM_0=logM0):
-#     M_cut = pow(10., logM_0)
-#     if d_fit:
-#         lbd = .5*(np.log(M1/M0) + (pow(M1/M_cut,d_fit)-pow(M0/M_cut,d_fit))/d_fit) / ( f_duty*dt/(0.1*t_Edd) )
-#     else:
-#         lbd = np.log(M1/M0)  / ( f_duty*dt/(0.1*t_Edd) )
-#     return lbd/l_cut
 
 def kernelS_MBH_M(M1, M0, dt, f_duty, l_cut, d_fit, logM_0=logM0):
     M_cut = 1e8
@@ -283,7 +210,6 @@ def kernelS_MBH_M_mesh(M1, M0, dt, f_duty, l_cut, d_fit, logM_0=logM0):
         lbd = np.log(yy/xx)  / ( f_duty*dt/(0.1*t_Edd) )
     return lbd/l_cut
 
-
 def kernelS_M1450(M1450, MBH, l_cut):
     lbd = Lbol_M1450(M1450)/(1.25e38*MBH)
     return lbd/l_cut
@@ -293,7 +219,7 @@ def kernelS_M1450_mesh(M1450, MBH, l_cut):
     zz = Lbol_M1450(yy)/(1.25e38*xx)
     return zz/l_cut
 
-def kernel_M1450(M1450, MBH, mu, sigma_dex):
+def kernel_M1450(M1450, MBH, mu, sigma_dex): # log-normal lambda dist.
     lbd = Lbol_M1450(M1450)/(1.25e38*MBH)
     return np.log(lbd/mu) / (sigma_dex*np.log(10.)*math.sqrt(2.))
 
@@ -608,7 +534,7 @@ for iM in range(N_Mh):
     Ts.append(TM)
 
 # MF bins
-abin_mf =  np.logspace(2,12,num=800) # default endpoint=True
+abin_mf =  np.logspace(2,11,num=1000) # default endpoint=True
 M_BH = abin_mf[:-1]*np.sqrt(abin_mf[1]/abin_mf[0])
 bin_left = abin_mf[:-1]; bin_right = abin_mf[1:]
 wid_mf = bin_right - bin_left
@@ -621,6 +547,7 @@ eps = 1e-5
 
 # LF bins
 abin_lf = np.linspace(-32,-15,num=171)
+abin_lf = np.linspace(-32,-5,num=171)
 dmag = abin_lf[1]-abin_lf[0]
 L_left = abin_lf[:-1]; L_right = abin_lf[1:]
 M1450  = (L_left+L_right)/2.
@@ -632,10 +559,10 @@ N_lf = len(M1450)
 # Phi_obs = LF_M1450(M1450)*1e9
 # Phi_err = 10.**.5
 
-# LF bins same w/ Matsu18
-z = int(6)
-bin_edg = bin_edg[str(z)]
-bin_wid = bin_wid[str(z)]
-bin_cen = bin_cen[str(z)]
-Phi_obs = Phi_obs[str(z)]
-Phi_err = Phi_err[str(z)]
+# # LF bins same w/ Matsu18
+# z = int(6)
+# bin_edg = bin_edg[str(z)]
+# bin_wid = bin_wid[str(z)]
+# bin_cen = bin_cen[str(z)]
+# Phi_obs = Phi_obs[str(z)]
+# Phi_err = Phi_err[str(z)]

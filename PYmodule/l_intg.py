@@ -1,6 +1,7 @@
 from PYmodule import *
 
 def integral(a,x,x0):
+    a = round(a,8) # python precision ~ 1e-17; avoid numerical error
     if a>0:
         return gamma(a)*(gammainc(a,x)-gammainc(a,x0))
     elif a ==0:
@@ -10,6 +11,7 @@ def integral(a,x,x0):
         return 1./a * (integral(a+1,x,x0) + pow(x,a)*np.exp(-x)-pow(x0,a)*np.exp(-x0))
 
 def integral_toinf(a,x0):
+    a = round(a,8)
     if a>0:
         return gamma(a)*gammaincc(a,x0)
     elif a==0:
